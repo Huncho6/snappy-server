@@ -16,6 +16,10 @@ const PostSchema = new Schema(
       type: String,
       required: true,
     },
+    likes: {
+      type: Number,
+      default: 0, // Set default value to 0
+    },
   },
   {
     timestamps: true, // Automatically add createdAt and updatedAt timestamps

@@ -4,6 +4,8 @@ const { storage } = require("./storage/storage");
 const multer = require("multer");
 const upload = multer({ storage });
 const cors = require("cors");
+const mongoose = require("mongoose");
+const ObjectId = mongoose.Types.ObjectId;
 const Post = require("./model/postModel");
 const authRoute = require("./auth/authRoute");
 const db = require("./db");
@@ -53,6 +55,7 @@ app.get("/posts", async (req, res) => {
   try {
     const posts = await Post.find();
     res.status(200).send({
+      count: posts.length,
       status: "success",
       message: "Posts retrieved successfully",
       data: posts,
@@ -80,6 +83,62 @@ app.get("/post/:id", async (req, res) => {
       message: "Error retrieving post",
       error: error,
     });
+  }
+});
+
+app.put("/posts/:id/like", async (req, res) => {
+  try {
+    const postId = req.params.id;
+    // console.log("Post ID received:", postId);
+
+    // Validate ObjectId
+    if (!mongoose.Types.ObjectId.isValid(postId)) {
+      return res.status(400).send({
+        status: "error",
+        message: "Invalid post ID",
+      });
+    }
+
+    const post = await Post.findByIdAndUpdate(
+      postId,
+      { $inc: { likes: 1 } }, // Increment the likes by 1
+      { new: true } // Return the updated document
+    );
+
+    if (!post) {
+      return res.status(404).send({
+        status: "error",
+        message: "Post not found",
+      });
+    }
+
+    res.status(200).send({
+      status: "success",
+      message: "Post liked successfully",
+      data: post,
+    });
+  } catch (error) {
+    console.error("Error liking post:", error);
+    res.status(500).send({
+      status: "error",
+      message: "Internal Server Error",
+      error: error.message,
+    });
+  }
+});
+
+app.delete("/post/:id", async (req, res) => {
+  try {
+    const id = new ObjectId(req.params.id);
+    const result = await Post.deleteOne({ _id: id });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).json({ message: "post not found" });
+    }
+
+    res.status(200).json({ message: "post deleted" });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
